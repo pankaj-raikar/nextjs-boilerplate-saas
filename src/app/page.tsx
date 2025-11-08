@@ -1,12 +1,18 @@
-import Image from "next/image";
-
-import db from "@/lib/db";
-
+import { getQueryClient, trpc } from "@/trpc/server";
+import { Client } from "./Client";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
+import { Suspense } from "react";
 export default async function Home() {
-  const users = await db.user.findMany();
+  const queryClient = getQueryClient();
+
+  void queryClient.prefetchQuery(trpc.getUser.queryOptions());
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <pre>{JSON.stringify(users, null, 2)}</pre>
+      <HydrationBoundary state={dehydrate(getQueryClient())}>
+        <Suspense fallback={<div>Loading...</div>}>
+          <Client />
+        </Suspense>
+      </HydrationBoundary>
     </div>
   );
 }
