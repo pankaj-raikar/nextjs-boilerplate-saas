@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { baseProcedure, createTRPCRouter } from '../init';
+import { baseProcedure, createTRPCRouter, protectedProcedure } from '../init';
 import db from '@/lib/db';
 export const appRouter = createTRPCRouter({
   hello: baseProcedure
@@ -13,9 +13,13 @@ export const appRouter = createTRPCRouter({
         greeting: `hello ${opts.input.text}`,
       };
     }),
-    getUser:baseProcedure.query(async()=>{
-        return await db.user.findFirst()
-    })
+    getUser:protectedProcedure.query(({ctx})=>{
+        return db.user.findUnique({
+            where:{
+                id:ctx.auth.user.id
+            }
+        })
+    }),
 });
 // export type definition of API
 export type AppRouter = typeof appRouter;

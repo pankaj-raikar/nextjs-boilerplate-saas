@@ -46,6 +46,52 @@ A modern, full-stack SaaS boilerplate built with Next.js 16, featuring TypeScrip
 - `class-variance-authority` - Component variants
 - `zod` - Schema validation
 
+## ⚡ Performance Optimization: Server-Side Prefetching
+
+This boilerplate demonstrates advanced performance patterns by leveraging server-side rendering with client-side hydration for optimal loading speeds.
+
+### Server-Side Data Prefetching
+
+In `src/app/page.tsx`, data is prefetched on the server before the page renders:
+
+```tsx
+// Server-side prefetching for instant initial load
+void queryClient.prefetchQuery(trpc.getUser.queryOptions());
+
+// Hydrate the prefetched data to the client
+<HydrationBoundary state={dehydrate(getQueryClient())}>
+  <Suspense fallback={<div>Loading...</div>}>
+    <Client />
+  </Suspense>
+</HydrationBoundary>;
+```
+
+### Client-Side Data Hydration
+
+The `src/app/Client.tsx` component seamlessly continues from the server state:
+
+```tsx
+"use client";
+export const Client = () => {
+  const trpc = useTRPC();
+
+  // Instantly available data from server prefetch
+  const { data: user } = useSuspenseQuery(trpc.getUser.queryOptions());
+
+  return (
+    <div>this is client and their data {JSON.stringify(user, null, 2)}</div>
+  );
+};
+```
+
+### Benefits
+
+- **⚡ Instant Loading**: Data loads immediately without client-side waterfalls
+- **🚀 SEO Friendly**: Server-rendered content for search engines
+- **🔄 Seamless Hydration**: Client takes over without refetching
+- **📱 Progressive Enhancement**: Works without JavaScript, enhanced with it
+- **🛡️ Type Safety**: End-to-end type safety from database to UI
+
 ## 🚀 Getting Started
 
 ### Prerequisites
