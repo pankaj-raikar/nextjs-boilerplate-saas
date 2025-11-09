@@ -2,6 +2,7 @@ import { inngest } from "./client";
 import db from "@/lib/db";
 import { generateText } from "ai";
 import { google } from "@ai-sdk/google";
+import * as Sentry from "@sentry/nextjs";
 
 export const helloWorld = inngest.createFunction(
   { id: "hello-world" },
@@ -36,6 +37,14 @@ export const summarizeContents = inngest.createFunction(
     const { text } = await step.ai.wrap("using-vercel-ai", generateText, {
       model: google("gemini-2.5-flash-lite"),
       prompt: "What is love?",
+      experimental_telemetry: {
+        isEnabled: true,
+        recordInputs: true,
+        recordOutputs: true,
+      },
+    });
+    Sentry.logger.info("User triggered test log", {
+      log_source: "sentry_test",
     });
 
     return text;
