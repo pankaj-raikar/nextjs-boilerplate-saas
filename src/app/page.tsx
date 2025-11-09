@@ -11,6 +11,7 @@ import {
   RedirectToSignIn,
   AuthLoading,
 } from "@daveyplate/better-auth-ui";
+
 export default async function Page() {
   // const queryClient = getQueryClient();
 

@@ -8,7 +8,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-blue?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
 
-A modern, full-stack SaaS boilerplate built with Next.js 16, featuring enterprise-grade authentication, TypeScript, Prisma ORM, tRPC for type-safe APIs, Tailwind CSS for styling, and a comprehensive UI component library powered by **Better Auth UI**.
+A modern, full-stack SaaS boilerplate built with Next.js 16, featuring enterprise-grade authentication, TypeScript, Prisma ORM, tRPC for type-safe APIs, Tailwind CSS for styling, Inngest for background jobs, and a comprehensive UI component library powered by **Better Auth UI**.
 
 ## ✨ Features
 
@@ -23,6 +23,9 @@ A modern, full-stack SaaS boilerplate built with Next.js 16, featuring enterpris
 - **State Management**: TanStack Query for server state
 - **Forms**: React Hook Form with Zod validation
 - **Authentication**: Better Auth UI v3.2.8 with enterprise features
+- **Background Jobs**: Inngest for reliable async processing
+- **Email Services**: Resend integration for email delivery
+- **Database**: PostgreSQL with Prisma ORM and migrations
 
 ### 🎨 UI & Design
 
@@ -46,6 +49,8 @@ A modern, full-stack SaaS boilerplate built with Next.js 16, featuring enterpris
 - **Linting & Formatting**: Biome for fast code quality
 - **Database Management**: Prisma Studio and migrations
 - **Type Safety**: End-to-end type safety with tRPC
+- **Background Processing**: Inngest for reliable job execution
+- **Email Integration**: Resend for transactional emails
 - **Hot Reload**: Fast development with Next.js dev server
 
 ### 📦 Key Dependencies
@@ -55,6 +60,8 @@ A modern, full-stack SaaS boilerplate built with Next.js 16, featuring enterpris
 - `@tanstack/react-query` - Data fetching
 - `@daveyplate/better-auth-ui` - Enterprise Authentication UI
 - `better-auth` - Authentication library
+- `inngest` - Background job processing
+- `resend` - Email delivery service
 - `@radix-ui/*` - Accessible UI primitives
 - `class-variance-authority` - Component variants
 - `zod` - Schema validation
@@ -309,32 +316,51 @@ return (
 ```
 nextjs-boilerplate-saas/
 ├── prisma/
-│   ├── schema.prisma          # Database schema
+│   ├── schema.prisma          # Database schema with auth tables
 │   └── migrations/            # Database migrations
 ├── public/                    # Static assets
 ├── src/
 │   ├── app/                   # Next.js app router pages
 │   │   ├── api/               # API routes
-│   │   ├── globals.css        # Global styles
-│   │   ├── layout.tsx         # Root layout
-│   │   └── page.tsx           # Home page
+│   │   │   ├── auth/          # Better Auth API routes
+│   │   │   ├── inngest/       # Inngest webhook endpoint
+│   │   │   └── trpc/          # tRPC API routes
+│   │   ├── auth/              # Authentication pages (dynamic routing)
+│   │   ├── account/           # User account settings
+│   │   ├── organization/      # Organization management
+│   │   ├── globals.css        # Global styles with Better Auth UI
+│   │   ├── layout.tsx         # Root layout with providers
+│   │   └── page.tsx           # Home page with auth components
 │   ├── components/            # Reusable components
-│   │   └── ui/               # UI component library
+│   │   ├── ui/               # UI component library (Radix + custom)
+│   │   ├── Headers.tsx       # Header with UserButton integration
+│   │   └── modeToggle.tsx    # Dark/light mode toggle
+│   ├── inngest/              # Background job functions
+│   │   ├── client.ts         # Inngest client configuration
+│   │   └── functions.ts      # Job function definitions
 │   ├── lib/                  # Utilities and configurations
-│   │   ├── db.ts             # Database client
+│   │   ├── auth.tsx          # Better Auth server configuration
+│   │   ├── auth-client.ts    # Better Auth client configuration
+│   │   ├── db.ts             # Prisma database client
 │   │   └── utils.ts          # Helper functions
+│   ├── providers/            # React providers
+│   │   └── betterAuthUiProvider.tsx # Auth UI provider setup
 │   ├── trpc/                 # tRPC configuration
 │   │   ├── client.tsx        # tRPC client
 │   │   ├── init.ts           # tRPC initialization
 │   │   ├── routers/          # API routers
+│   │   │   └── _app.ts       # Root tRPC router
 │   │   └── server.tsx        # tRPC server utilities
 │   └── hooks/                # Custom React hooks
-├── .env                       # Environment variables
-├── biome.json                # Linting configuration
+├── .env                      # Environment variables
+├── .env.example              # Environment variables template
+├── .gitignore                # Git ignore rules (excludes /llm/)
+├── biome.json                # Linting and formatting configuration
 ├── next.config.ts            # Next.js configuration
 ├── package.json              # Dependencies and scripts
 ├── tailwind.config.ts        # Tailwind CSS configuration
-└── tsconfig.json             # TypeScript configuration
+├── tsconfig.json             # TypeScript configuration
+└── README.md                 # This documentation
 ```
 
 ## 🗄️ Database Schema
@@ -347,6 +373,7 @@ The application uses Prisma ORM with PostgreSQL. Current models include:
 - **Account**: Social provider accounts linking
 - **Verification**: Email verification tokens
 - **ApiKey**: API keys for programmatic access (Better Auth UI feature)
+- **Job Functions**: Inngest functions for background processing
 
 ### Authentication Tables (Better Auth UI)
 
@@ -366,6 +393,11 @@ Create a `.env.local` file with the following variables:
 
 ```env
 DATABASE_URL="postgresql://username:password@localhost:5432/dbname"
+BETTER_AUTH_SECRET="your-secret-key" # Generate a secure random string
+BETTER_AUTH_URL="http://localhost:3000" # Base URL of your app
+
+# Resend API key for email delivery
+RESEND_API_KEY="your-resend-api-key"
 
 # Better Auth UI - Social Providers (Optional)
 GITHUB_CLIENT_ID="your-github-client-id"
@@ -373,18 +405,20 @@ GITHUB_CLIENT_SECRET="your-github-client-secret"
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
-# Better Auth UI - Email Configuration (for magic links, etc.)
-# Configure your email provider in the auth configuration
+# Inngest Configuration (Optional - for background jobs)
+INNGEST_EVENT_KEY="your-inngest-event-key"
 ```
 
 ### Authentication Setup
 
 The authentication system is pre-configured with Better Auth UI. Key files:
 
-- `src/lib/auth.ts` - Server-side authentication configuration
+- `src/lib/auth.ts` - Server-side authentication configuration with Resend email templates
 - `src/lib/auth-client.ts` - Client-side authentication client
-- `src/providers/betterAuthUiProvider.tsx` - Auth UI provider setup
+- `src/providers/betterAuthUiProvider.tsx` - Auth UI provider setup with advanced features
 - `src/app/api/auth/[...all]/route.ts` - Authentication API routes
+- `src/inngest/` - Background job functions and client configuration
+- `src/app/api/inngest/route.ts` - Inngest webhook endpoint
 
 ### Prisma Configuration
 
@@ -407,14 +441,23 @@ Additional settings can be modified in `next.config.ts`. The authentication rout
 2. Add environment variables in Vercel dashboard
 3. Deploy automatically on push
 
+### Inngest Setup (for Background Jobs)
+
+If using Inngest for background processing:
+
+1. Create an Inngest account at [inngest.com](https://inngest.com)
+2. Connect your repository to Inngest
+3. Add `INNGEST_EVENT_KEY` to your environment variables
+4. Deploy your functions
+
 ### Other Platforms
 
 The application can be deployed to any platform supporting Node.js:
 
-- **Railway**
-- **Render**
-- **AWS/GCP/Azure**
-- **Docker** (create a Dockerfile)
+- **Railway** - Full-stack deployment with PostgreSQL
+- **Render** - Cloud hosting with managed databases
+- **AWS/GCP/Azure** - Enterprise cloud platforms
+- **Docker** - Containerized deployment
 
 ### Build Commands
 
@@ -435,13 +478,15 @@ npm run start
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🎯 What's New: Better Auth UI Integration
+## 🎯 What's New: Latest Features & Integrations
 
-### ✨ Latest Features Added
+### ✨ Recent Additions
 
-This boilerplate has been enhanced with **Better Auth UI v3.2.8**, providing:
+This boilerplate has been significantly enhanced with multiple new features:
 
-#### 🔐 Complete Authentication System
+#### 🔐 Better Auth UI v3.2.8 Enterprise Integration
+
+#### 🔐 Better Auth UI v3.2.8 Enterprise Integration
 
 - **Multi-method Authentication**: Email/password, magic links, social providers
 - **Advanced User Management**: Profiles, avatars, account settings
@@ -450,6 +495,19 @@ This boilerplate has been enhanced with **Better Auth UI v3.2.8**, providing:
 - **Custom Fields**: Additional registration fields (company, age validation, etc.)
 - **Localization**: Multi-language support for all auth flows
 - **Custom Routing**: Flexible URL paths (login, register, forgot, etc.)
+
+#### ⚡ Inngest Background Processing
+
+- **Reliable Job Execution**: Event-driven background processing
+- **User Functions**: Pre-configured hello world and user demo functions
+- **Webhook Integration**: API endpoints for job triggers
+- **Type Safety**: Full TypeScript support for function definitions
+
+#### 📧 Resend Email Integration
+
+- **Transactional Emails**: Integrated with Better Auth for verification
+- **Beautiful Templates**: Pre-styled email templates using Better Auth UI
+- **Customizable Content**: Easy to modify email content and branding
 
 #### 🎨 Enhanced UI Components
 
@@ -562,11 +620,47 @@ All authentication components support extensive customization:
 />
 ```
 
+## 🤖 Background Job Examples
+
+### Basic Inngest Function
+
+```typescript title="src/inngest/functions.ts"
+import { inngest } from "./client";
+
+export const helloWorld = inngest.createFunction(
+  { id: "hello-world" },
+  { event: "test/hello.world" },
+  async ({ event, step }) => {
+    await step.sleep("wait-a-moment", "4s");
+    return { message: `Hello ${event.data.email}!` };
+  }
+);
+```
+
+### Database Integration
+
+```typescript title="src/inngest/functions.ts"
+export const demoGetCurrentUser = inngest.createFunction(
+  { id: "demo-get-current-user" },
+  { event: "test/demo.get-current-user" },
+  async ({ event, step }) => {
+    await step.run("fetching current user", async () => {
+      const user = await db.user.findUnique({
+        where: { id: event.data.id },
+      });
+      return user;
+    });
+  }
+);
+```
+
 ## 🙏 Acknowledgments
 
 - [Next.js](https://nextjs.org/) - The React framework
 - [Better Auth UI](https://better-auth-ui.com/) - Authentication UI components
 - [Better Auth](https://better-auth.com/) - Authentication library
+- [Inngest](https://inngest.com/) - Background job processing
+- [Resend](https://resend.com/) - Email delivery service
 - [Prisma](https://www.prisma.io/) - Database toolkit
 - [tRPC](https://trpc.io/) - Type-safe APIs
 - [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
@@ -575,4 +669,19 @@ All authentication components support extensive customization:
 
 ---
 
+## 📋 What's Next
+
+This boilerplate is continuously evolving. Upcoming features may include:
+
+- **Organization Management**: Multi-tenant organization features (currently excluded)
+- **Advanced Analytics**: User behavior and performance metrics
+- **File Uploads**: Enhanced media management with Cloudinary/CDN
+- **Real-time Features**: WebSocket integration for live updates
+- **Payment Integration**: Stripe/PayPal for subscription management
+- **Admin Dashboard**: Comprehensive admin panel for user management
+
 Built with ❤️ using Next.js and modern web technologies.
+
+---
+
+_Last updated: November 2025_
