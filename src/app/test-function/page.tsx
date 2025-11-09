@@ -9,7 +9,10 @@ const page = () => {
   const testai = useMutation(
     trpc.testAi.mutationOptions({
       onSuccess(data) {
-        toast.success("event is clicked");
+        toast.success("Test AI action completed successfully");
+      },
+      onError(error) {
+        toast.error("Failed to execute test AI action");
       },
     })
   );
