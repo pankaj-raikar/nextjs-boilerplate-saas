@@ -5,6 +5,7 @@
 [![Prisma](https://img.shields.io/badge/Prisma-6.19.0-green?style=for-the-badge&logo=prisma)](https://www.prisma.io/)
 [![tRPC](https://img.shields.io/badge/tRPC-11.7.1-pink?style=for-the-badge&logo=trpc)](https://trpc.io/)
 [![Better Auth UI](https://img.shields.io/badge/Better_Auth_UI-3.2.8-purple?style=for-the-badge)](https://better-auth-ui.com/)
+[![Sentry](https://img.shields.io/badge/Sentry-8.0-red?style=for-the-badge&logo=sentry)](https://sentry.io/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-blue?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
 
@@ -25,6 +26,7 @@ A modern, full-stack SaaS boilerplate built with Next.js 16, featuring enterpris
 - **Authentication**: Better Auth UI v3.2.8 with enterprise features
 - **Background Jobs**: Inngest for reliable async processing
 - **Email Services**: Resend integration for email delivery
+- **Error Monitoring**: Sentry 8.0 for comprehensive error tracking
 - **Database**: PostgreSQL with Prisma ORM and migrations
 
 ### 🎨 UI & Design
@@ -51,6 +53,7 @@ A modern, full-stack SaaS boilerplate built with Next.js 16, featuring enterpris
 - **Type Safety**: End-to-end type safety with tRPC
 - **Background Processing**: Inngest for reliable job execution
 - **Email Integration**: Resend for transactional emails
+- **Error Monitoring**: Sentry 8.0 for production error tracking
 - **Hot Reload**: Fast development with Next.js dev server
 
 ### 📦 Key Dependencies
@@ -62,6 +65,7 @@ A modern, full-stack SaaS boilerplate built with Next.js 16, featuring enterpris
 - `better-auth` - Authentication library
 - `inngest` - Background job processing
 - `resend` - Email delivery service
+- `@sentry/nextjs` - Error monitoring and tracking
 - `@radix-ui/*` - Accessible UI primitives
 - `class-variance-authority` - Component variants
 - `zod` - Schema validation
@@ -407,6 +411,12 @@ GOOGLE_CLIENT_SECRET="your-google-client-secret"
 
 # Inngest Configuration (Optional - for background jobs)
 INNGEST_EVENT_KEY="your-inngest-event-key"
+
+# Sentry Configuration (Optional - for error monitoring)
+SENTRY_AUTH_TOKEN="your-sentry-auth-token"
+SENTRY_DSN="your-sentry-dsn"
+SENTRY_ORG="your-sentry-org"
+SENTRY_PROJECT="your-sentry-project"
 ```
 
 ### Authentication Setup
@@ -419,6 +429,8 @@ The authentication system is pre-configured with Better Auth UI. Key files:
 - `src/app/api/auth/[...all]/route.ts` - Authentication API routes
 - `src/inngest/` - Background job functions and client configuration
 - `src/app/api/inngest/route.ts` - Inngest webhook endpoint
+- `sentry.server.config.ts` - Server-side Sentry configuration
+- `sentry.edge.config.ts` - Edge runtime Sentry configuration
 
 ### Prisma Configuration
 
@@ -449,6 +461,16 @@ If using Inngest for background processing:
 2. Connect your repository to Inngest
 3. Add `INNGEST_EVENT_KEY` to your environment variables
 4. Deploy your functions
+
+### Sentry Setup (for Error Monitoring)
+
+For production error monitoring with Sentry:
+
+1. Create a Sentry account at [sentry.io](https://sentry.io)
+2. Create a new project for your application
+3. Add the required environment variables (`SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, etc.)
+4. Configure source maps for better error tracking by running `npm run build`
+5. Deploy your application to see real-time error monitoring
 
 ### Other Platforms
 
@@ -508,6 +530,13 @@ This boilerplate has been significantly enhanced with multiple new features:
 - **Transactional Emails**: Integrated with Better Auth for verification
 - **Beautiful Templates**: Pre-styled email templates using Better Auth UI
 - **Customizable Content**: Easy to modify email content and branding
+
+#### 🐛 Sentry Error Monitoring
+
+- **Enterprise Error Tracking**: Comprehensive error monitoring for production
+- **Performance Insights**: Real-time performance metrics and tracing
+- **Release Tracking**: Automatic release tracking and deployment monitoring
+- **Source Maps**: Enhanced debugging with source map support
 
 #### 🎨 Enhanced UI Components
 
@@ -620,6 +649,52 @@ All authentication components support extensive customization:
 />
 ```
 
+## 🐛 Sentry Error Monitoring Examples
+
+### Basic Error Tracking
+
+```typescript title="src/app/sentry-example-page/page.tsx"
+import * as Sentry from "@sentry/nextjs";
+
+class CustomError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CustomApplicationError";
+  }
+}
+
+// Trigger an error to test Sentry
+throw new CustomError("This error will be captured by Sentry!");
+```
+
+### Performance Monitoring
+
+```typescript
+await Sentry.startSpan(
+  {
+    name: "Database Query",
+    op: "db.query",
+  },
+  async () => {
+    // Your database operation
+    const data = await db.user.findMany();
+    return data;
+  }
+);
+```
+
+### Connectivity Check
+
+```typescript
+useEffect(() => {
+  async function checkConnectivity() {
+    const result = await Sentry.diagnoseSdkConnectivity();
+    setIsConnected(result !== "sentry-unreachable");
+  }
+  checkConnectivity();
+}, []);
+```
+
 ## 🤖 Background Job Examples
 
 ### Basic Inngest Function
@@ -661,6 +736,7 @@ export const demoGetCurrentUser = inngest.createFunction(
 - [Better Auth](https://better-auth.com/) - Authentication library
 - [Inngest](https://inngest.com/) - Background job processing
 - [Resend](https://resend.com/) - Email delivery service
+- [Sentry](https://sentry.io/) - Error monitoring and tracking
 - [Prisma](https://www.prisma.io/) - Database toolkit
 - [tRPC](https://trpc.io/) - Type-safe APIs
 - [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
@@ -674,14 +750,62 @@ export const demoGetCurrentUser = inngest.createFunction(
 This boilerplate is continuously evolving. Upcoming features may include:
 
 - **Organization Management**: Multi-tenant organization features (currently excluded)
-- **Advanced Analytics**: User behavior and performance metrics
+- **Advanced Analytics**: User behavior and performance metrics with Sentry
 - **File Uploads**: Enhanced media management with Cloudinary/CDN
 - **Real-time Features**: WebSocket integration for live updates
 - **Payment Integration**: Stripe/PayPal for subscription management
 - **Admin Dashboard**: Comprehensive admin panel for user management
+- **Advanced Monitoring**: Enhanced error tracking and performance insights
+- **AI Integration**: LLM capabilities and intelligent features
 
 Built with ❤️ using Next.js and modern web technologies.
 
 ---
 
 _Last updated: November 2025_
+
+---
+
+## 🎯 Enterprise SaaS Features (November 2025)
+
+This boilerplate represents the cutting-edge of modern SaaS development, featuring:
+
+### 🔒 **Enterprise-Grade Authentication**
+
+- **Better Auth UI v3.2.8** with comprehensive security features
+- **Multi-factor authentication** support
+- **API key management** for programmatic access
+- **Custom user fields** with validation (company, age, etc.)
+- **Localization support** for global applications
+- **Flexible routing** with customizable auth paths
+
+### 🔄 **Background Processing & Monitoring**
+
+- **Inngest integration** for reliable background job processing
+- **Sentry 8.0** for enterprise error monitoring and performance tracking
+- **Real-time connectivity checks** and diagnostic capabilities
+- **Event-driven architecture** for scalable operations
+
+### 📧 **Communication Infrastructure**
+
+- **Resend integration** for transactional email delivery
+- **Beautiful email templates** powered by Better Auth UI
+- **Customizable branding** and content management
+
+### 🏗️ **Developer Experience**
+
+- **TypeScript 5.0** for end-to-end type safety
+- **tRPC v11.7.1** for type-safe API communication
+- **Prisma 6.19.0** with PostgreSQL for robust data management
+- **Biome** for fast linting and code formatting
+- **Hot reload** with Next.js 16 App Router
+
+### 🎨 **Modern UI/UX**
+
+- **Tailwind CSS 4.0** for utility-first styling
+- **Radix UI** components for accessibility
+- **Dark/Light mode** support with next-themes
+- **Responsive design** patterns
+- **Loading states** and smooth transitions
+
+This boilerplate is production-ready and designed to scale with your business needs. Each integration is carefully configured for optimal performance, security, and developer experience.
